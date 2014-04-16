@@ -58,6 +58,13 @@
 ./build.sh run-tests
 </command>
     </hudson.tasks.Shell>
+    <hudson.tasks.Shell>
+      <command>rm -rf out
+./tools/travis-install.sh
+. ./neudev/bin/activate
+./configure --noisy --expchecks --debug --gcc48
+./build.sh run-tests</command>
+    </hudson.tasks.Shell>
   </builders>
   <publishers/>
   <buildWrappers/>
