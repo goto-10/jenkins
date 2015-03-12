@@ -4,16 +4,16 @@
 set -v -e
 
 # Check out the jenkins repo.
+sudo su vagrant -c "git clone https://github.com/tundra/jenkins.git"
 ROOT=/home/vagrant/jenkins
-mkdir -p $ROOT
-chown vagrant $ROOT
+JENKINS_HOME=$ROOT/home
 
 # Copy the private key into the roots dir and set the appropriate permissions.
 KEY_DROP=/home/vagrant/keydrop
-mkdir -p $ROOT/keys
-cp $KEY_DROP/id_rsa $ROOT/keys
-chmod 400 $ROOT/keys/id_rsa
-chown -R jenkins $ROOT/keys
+mkdir -p $JENKINS_HOME/keys
+cp $KEY_DROP/id_rsa $JENKINS_HOME/keys
+chmod 400 $JENKINS_HOME/keys/id_rsa
+chown -R jenkins $JENKINS_HOME/keys
 rm -rf $KEY_DROP
 
 # Install jenkins from their repo. This is the recommended way. Looks dodgy.
@@ -30,17 +30,16 @@ apt-get install -y jenkins
 /etc/init.d/jenkins stop
 
 # Use the jenkins repo's .
-NEW_HOME=/home/vagrant/jenkins
-chmod o+w $NEW_HOME
+chmod o+w $JENKINS_HOME
 rm -rf /var/lib/jenkins
-ln -s $NEW_HOME /var/lib/jenkins
+ln -s $JENKINS_HOME /var/lib/jenkins
 
 # Start it again.
 /etc/init.d/jenkins start
 
 # Give the server a bit of time to become available, otherwise the cli will
-# fail.
-sleep 30
+# fail in some creative way.
+sleep 60
 
 # Install the required plugins in jenkins.
 SERVER_URL=http://localhost:8080
