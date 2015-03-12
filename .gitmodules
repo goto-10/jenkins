@@ -1,3 +1,0 @@
-[submodule "deps/platform"]
-	path = deps/platform
-	url = https://github.com/goto-10/platform
