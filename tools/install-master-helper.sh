@@ -44,4 +44,5 @@ sleep 60
 # Install the required plugins in jenkins.
 SERVER_URL=http://localhost:8080
 jenkins-cli -s $SERVER_URL install-plugin git
+jenkins-cli -s $SERVER_URL install-plugin ghprb
 jenkins-cli -s $SERVER_URL restart
