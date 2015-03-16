@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Given a shell script, runs it on the specified machine.
+
 set -e
 
 HOST=
@@ -57,6 +59,9 @@ fi
 
 set -v
 
+# This spills the script in /tmp/ which may become a problem at some point. But
+# fixing it would make this even more intricate which is the last thing we need
+# so look into that only if it does become a problem.
 TMPFILE=/tmp/remote-script-$RANDOM.sh
 scp -P$PORT $SCRIPT $USER_PREFIX$HOST:$TMPFILE
 ssh -p$PORT $USER_PREFIX$HOST "bash $TMPFILE"
