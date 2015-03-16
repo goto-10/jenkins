@@ -1,23 +1,81 @@
 #!/bin/bash
 
-# Print commands; fail on errors.
-set -v -e
+# Main script for setting up a jenkins master on a clean machine. Well, when I
+# say clean I mean: you better have ssh keys set up or you'll find yourself
+# entering passwords a *lot*.
 
-if [ "$#" -ne 3 ]; then
-  echo "Usage: install-master.sh <host> <port> <private key>"
+set -e
+
+BASE=$(dirname $0)
+REMOTE_FLAGS=
+ACCESS_PUB=
+JENKINS_PRI=
+PORT=22
+HOST=
+
+while getopts ":-:" OPTCHAR; do
+  case "$OPTCHAR" in
+    -)
+      case "$OPTARG" in
+        host)
+          HOST="${!OPTIND}"
+          REMOTE_FLAGS="$REMOTE_FLAGS --host $HOST"
+          OPTIND=$(($OPTIND + 1))
+          ;;
+        port)
+          PORT="${!OPTIND}"
+          REMOTE_FLAGS="$REMOTE_FLAGS --port $PORT"
+          OPTIND=$(($OPTIND + 1))
+          ;;
+        access-public-key)
+          ACCESS_PUB="${!OPTIND}"
+          OPTIND=$(($OPTIND + 1))
+          ;;
+        jenkins-private-key)
+          JENKINS_PRI="${!OPTIND}"
+          OPTIND=$(($OPTIND + 1))
+          ;;
+        *)
+          echo "Unknown option --$OPTARG"
+          exit 1
+          ;;
+      esac
+      ;;
+    *)
+      echo "Unknown option -$OPTARG"
+      exit 1
+      ;;
+  esac
+done
+
+if [ -z "$ACCESS_PUB" ]; then
+  echo "No --access-public-key specified"
   exit 1
 fi
 
-HOST=$1
-PORT=$2
-KEY=$3
+if [ ! -f "$ACCESS_PUB" ]; then
+  echo "Public key $ACCESS_PUB doesn't exist"
+  exit 1
+fi
 
-# Copy the private key to the vagrant user's homedir. The install script will
-# copy it on into jenkins.
-cat $KEY | ssh -p$PORT vagrant@$HOST "mkdir keydrop && cat > keydrop/id_rsa"
+if [ -z "$JENKINS_PRI" ]; then
+  echo "No --jenkins-private-key specified"
+  exit 1
+fi
 
+if [ ! -f "$JENKINS_PRI" ]; then
+  echo "Private key $JENKINS_PRI doesn't exist"
+  exit 1
+fi
 
-# Run the install script which does most of the work locally.
-HELPER=$(dirname $0)/install-master-helper.sh
-scp -P$PORT $HELPER vagrant@$HOST:install-master-helper.sh
-ssh -p$PORT vagrant@$HOST "sudo ./install-master-helper.sh"
+# Prime the master, creating user jenkins etc.
+$BASE/run-script-remote.sh $REMOTE_FLAGS --user root --script $BASE/helpers/root-prime-master.sh
+
+# Add the public key to the jenkins user.
+cat $ACCESS_PUB | $BASE/run-script-remote.sh $REMOTE_FLAGS --user root --script $BASE/helpers/root-install-key.sh
+
+# Copy the jenkins identity to the machine such that it can "be" jenkins.
+scp -P$PORT $JENKINS_PRI jenkins@$HOST:/home/jenkins/jenkins/home/keys/id_rsa.jenkins
+
+# Finally, start jenkins running.
+$BASE/run-script-remote.sh $REMOTE_FLAGS --user root --script $BASE/helpers/root-start-jenkins.sh
