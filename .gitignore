@@ -1,5 +1,4 @@
 home/keys
 home/logs
 *.log
-home/secret*
 home/plugins
