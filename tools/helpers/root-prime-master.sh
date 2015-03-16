@@ -22,6 +22,10 @@ apt-get install -y unzip
 echo Use the generated strong password.
 passwd jenkins
 
+# Remap such that traffic to :80 goes to :8080. That way they both work which is
+# nice.
+iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to 8080
+
 # Check out the jenkins project under the jenkins user.
 if [ ! -f /home/jenkins ]; then
   mkdir -p /home/jenkins
